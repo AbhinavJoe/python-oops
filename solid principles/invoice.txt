@@ -1,0 +1,2 @@
+Items: {'shampoo': 5, 'chips': 10}
+Total: 15
