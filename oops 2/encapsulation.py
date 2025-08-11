@@ -1,4 +1,16 @@
-class BankAccount():
+"""
+Question:
+Create a BankAccount class where the account balance cannot be directly modified from outside the class.
+
+The balance should only change through deposit(amount) and withdraw(amount) methods.
+
+The withdrawal method should not allow overdrafts.
+
+Include a method to check the current balance safely.
+"""
+
+
+class BankAccount:
     def __init__(self, balance):
         self.__balance = balance
 
