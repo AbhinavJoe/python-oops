@@ -60,6 +60,14 @@ from abc import ABC, abstractmethod
 
 
 class CloudStorage(ABC):
+    def __init__(self, provider_name: str, region: str):
+        self.provider_name = provider_name
+        self.region = region
+
+    @abstractmethod
+    def show_provider_and_service(self):
+        pass
+
     @abstractmethod
     def upload_file(self, file_path: str, destination: str) -> str:
         pass
@@ -74,6 +82,15 @@ class CloudStorage(ABC):
 
 
 class S3Storage(CloudStorage):
+    def __init__(self, access_key: str, secret_key: str):
+        super().__init__(provider_name="S3", region="ap-south-1")
+        self.access_key = access_key
+        self.secret_key = secret_key
+
+    def show_provider_and_service(self):
+        if (self.access_key and self.secret_key):
+            print(f"Using {self.provider_name} in {self.region}")
+
     def upload_file(self, file_path: str, destination: str) -> str:
         print(f"[S3] Uploading {file_path} to bucket '{destination}'...")
         return "S3_123"
@@ -86,8 +103,19 @@ class S3Storage(CloudStorage):
         print(f"[S3] Deleting file with ID {file_id} from Amazon S3...")
         return True
 
+    def list_bucket(self, bucket_name: str):
+        return f"S3 Bucket Name - {bucket_name}"
+
 
 class GCPStorage(CloudStorage):
+    def __init__(self, service_account_json: dict):
+        super().__init__(provider_name="GCP", region="India Central")
+        self.service_account_json = service_account_json
+
+    def show_provider_and_service(self):
+        if (self.service_account_json):
+            print(f"Using {self.provider_name} in {self.region}")
+
     def upload_file(self, file_path: str, destination: str) -> str:
         print(f"[GCP] Uploading {file_path} to bucket '{destination}'...")
         return "GCP_456"
@@ -100,8 +128,19 @@ class GCPStorage(CloudStorage):
         print(f"[GCP] Deleting file with ID {file_id} from GCP Storage...")
         return True
 
+    def set_bucket_acl(self, bucket_name: str, acl: str):
+        return f"Change access {acl} of the GCP Bucket - {bucket_name}"
+
 
 class AzureStorage(CloudStorage):
+    def __init__(self, connection_string: str):
+        super().__init__(provider_name="Azure", region="Mumbai")
+        self.connection_string = connection_string
+
+    def show_provider_and_service(self):
+        if (self.connection_string):
+            print(f"Using {self.provider_name} in {self.region}")
+
     def upload_file(self, file_path: str, destination: str) -> str:
         print(f"[Azure] Uploading {file_path} to container '{destination}'...")
         return "AZURE_789"
@@ -114,14 +153,17 @@ class AzureStorage(CloudStorage):
         print(
             f"[Azure] Deleting file with ID {file_id} from Azure Blob Storage...")
         return True
-    
-    def something(self):
-        return True
+
+    def generate_sas_token(self, container_name: str):
+        return f"Generating temporary access token for container - {container_name}"
 
 
 class FileManager:
     def __init__(self, storage: CloudStorage):
         self.storage = storage
+
+    def provider_details(self):
+        return self.storage.show_provider_and_service()
 
     def upload(self, file_path: str, destination: str) -> str:
         return self.storage.upload_file(file_path, destination)
@@ -133,15 +175,26 @@ class FileManager:
         return self.storage.delete_file(file_id)
 
 
-providers = [S3Storage(), GCPStorage(), AzureStorage()]
+providers = [S3Storage("123", "12345"), GCPStorage(
+    {"some_key": "some value"}), AzureStorage("123")]
 
 for provider in providers:
     print("\n--- Using new provider ---")
     fm = FileManager(provider)
+    fm.provider_details()
     file_id = fm.upload("report.pdf", "reports")
     fm.download(file_id, "downloads")
     fm.delete(file_id)
 
+    # Provider-specific extras
+    if isinstance(provider, S3Storage):
+        print(provider.list_bucket("reports"))
+
+    elif isinstance(provider, GCPStorage):
+        print(provider.set_bucket_acl("reports", "public-read"))
+
+    elif isinstance(provider, AzureStorage):
+        print(provider.generate_sas_token("reports"))
 
 # MARK: Follow-up to Q-1
 
@@ -206,4 +259,3 @@ If you solve this, you’ll be hitting:
  - Polymorphism (upload/download/delete interchangeable across providers)
  - Composition (FileManager has-a CloudStorage)
 """
-
